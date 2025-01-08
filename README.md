@@ -207,3 +207,11 @@ The provided packages are not exhaustive, you are free to use any other package 
 - [Glaycan Analysis](https://www.mdpi.com/2218-273X/13/4/605)
 - [Glycowork](https://github.com/BojarLab/glycowork)
 - [UV package manager](https://docs.astral.sh/uv/guides/projects/)
+
+***
+
+# Solutions
+
+## Task1
+
+## Task2
