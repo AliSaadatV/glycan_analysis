@@ -1,0 +1,16 @@
+paths:
+  data_mat_path: "../data/internship_data_matrix.csv"
+  feat_meta_path: '../data/internship_feature_metadata.csv'
+  sample_meta_path: '../data/intership_acquisition_list.csv'
+  exog_stan_path: '../data/exogenous_standards.csv'
+
+mapping:
+  blank: 
+    - "B"
+  sample: 
+    - "Dunn"
+    - "French"
+    - "LMU"
+  qc: 
+    - "QC"
+    - "dQC"
