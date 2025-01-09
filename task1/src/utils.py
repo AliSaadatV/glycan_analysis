@@ -66,17 +66,18 @@ def calculate_d_ratio(data_mat, qc_samples, bio_samples):
         pd.DataFrame: DataFrame with features as rows and columns for QC CV, Bio CV, and D-Ratio.
     """
     import pandas as pd
+    import numpy as np
 
     # Subset data for QC and biological samples
-    qc_data = data_mat[data_mat['sample'].isin(qc_samples)].iloc[:, 1:-1]
-    bio_data = data_mat[data_mat['sample'].isin(bio_samples)].iloc[:, 1:-1]
+    qc_data = data_mat[data_mat['sample'].isin(qc_samples)].iloc[:, 1:]
+    bio_data = data_mat[data_mat['sample'].isin(bio_samples)].iloc[:, 1:]
     
     # Calculate Coefficient of Variation (CV) for QC and biological samples
     qc_cv = qc_data.std(axis=0) / qc_data.mean(axis=0)
     bio_cv = bio_data.std(axis=0) / bio_data.mean(axis=0)
     
     # Calculate D-Ratio for each feature
-    d_ratio = qc_data.std(axis=0) / (bio_data.std(axis=0) + 1e-6)  # Avoid division by zero
+    d_ratio = qc_data.std(axis=0) / np.sqrt(bio_data.std(axis=0)**2 + qc_data.std(axis=0)**2)
     
     # Combine results into a DataFrame
     variability_metrics = pd.DataFrame({
@@ -136,3 +137,45 @@ def calculate_detection_rate(data_mat, sample_meta, groupby="class", threshold=0
         )
 
     return result.reset_index().rename(columns={'index': 'class'})
+
+
+
+
+def correct_blank(
+    data_matrix, samples_meta, sample_classes, blank_classes
+):
+    """
+    Corrects the values of a data matrix based on specified classes and a correction factor.
+
+    Parameters
+    ----------
+    data_matrix : pd.DataFrame
+        DataFrame containing the data matrix (samples x features).
+    samples_meta : pd.DataFrame
+        DataFrame containing metadata for samples.
+    sample_classes : list
+        List of classes in `samples_meta` to be processed.
+    blank_classes : list
+        List of classes in `samples_meta` to be used for correction.
+
+    Returns
+    -------
+    pd.DataFrame
+        Data matrix with corrected values.
+    """
+
+    import pandas as pd
+
+    # Identify samples and blanks using samples_meta
+    samples = data_matrix[samples_meta['class'].isin(sample_classes)]
+    blanks = data_matrix[samples_meta['class'].isin(blank_classes)]
+
+    # Compute correction values (mean by default)
+    correction = blanks.mean()
+
+    # Correct samples
+    corrected = samples - correction
+    corrected[corrected < 0] = 0
+    data_matrix.loc[samples_meta['class'].isin(sample_classes)] = corrected
+
+    return data_matrix
