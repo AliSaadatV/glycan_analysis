@@ -3,6 +3,7 @@ paths:
   feat_meta_path: '../data/internship_feature_metadata.csv'
   sample_meta_path: '../data/intership_acquisition_list.csv'
   exog_stan_path: '../data/exogenous_standards.csv'
+  figures_dir: '../results/figures'
 
 mapping:
   blank: 
@@ -15,16 +16,22 @@ mapping:
     - "QC"
     - "dQC"
 
-plot_params:
-  axes.titlesize: 16
-  axes.labelsize: 14
+plt_params:
+  axes.titlesize: 12
+  axes.labelsize: 12
   xtick.labelsize: 12
   ytick.labelsize: 12
-  legend.fontsize: 12
-  figure.figsize: [10, 6]
-  figure.dpi: 300
+  legend.fontsize: 8
+  legend.title_fontsize: 8
+  figure.figsize: [8, 6]
+  figure.dpi: 100
   axes.edgecolor: black
   axes.linewidth: 1.0
   grid.color: grey
   grid.linestyle: '--'
   grid.linewidth: 0.5
+
+sns_params:
+  style: 'whitegrid'
+  palette: 'muted'
+  font_scale: 1.2
