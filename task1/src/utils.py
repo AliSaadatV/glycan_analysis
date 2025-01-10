@@ -204,3 +204,131 @@ def get_high_detection_rate_features(data_mat, sample_meta, ft_columns, bio_samp
 
 def get_high_mz_features(feat_meta, mz_threshold=500):
     return feat_meta[feat_meta['mz'] > mz_threshold]['feature'].values.tolist()
+
+
+
+
+def pairwise_comparison(data_matrix, class1, class2):
+    """
+    Analyze features in the data matrix to compute Wilcoxon test p-values, fold-change, and effect size 
+    between two specified classes.
+    
+    Parameters:
+        data_matrix (pd.DataFrame): Data matrix (samples x features) with a 'class' column indicating class labels.
+        class1 (str): The first class label.
+        class2 (str): The second class label.
+        
+    Returns:
+        pd.DataFrame: DataFrame with feature-level statistics: p-value, fold-change, and effect size.
+    """
+
+    from scipy.stats import ttest_ind
+    import numpy as np
+    import pandas as pd
+
+    # Check if the specified classes exist in the 'class' column
+    if class1 not in data_matrix['class'].unique() or class2 not in data_matrix['class'].unique():
+        raise ValueError("Specified classes not found in the 'class' column.")
+    
+    results = []
+
+    for feature in data_matrix.columns.drop('class'):
+        # Split feature values by class
+        group1 = data_matrix[data_matrix['class'] == class1][feature]
+        group2 = data_matrix[data_matrix['class'] == class2][feature]
+        
+        # Wilcoxon rank-sum test (Mann-Whitney U test)
+        #stat, p_value = mannwhitneyu(group1, group2, alternative='two-sided')
+        stat, p_value = ttest_ind(group1, group2)
+
+        #stat, p_value  = permutation_test((group1, group2), statistic='mean')
+
+        # Fold-change (log2 of ratio of medians)
+        median1, median2 = np.median(group1), np.median(group2)
+        fold_change = np.log2(median2 / (median1 + 1e-6) ) #if median1 > 0 else np.nan
+        
+        # Append results
+        results.append({
+            'feature': feature,
+            'p_value': p_value,
+            'log2FC': fold_change,
+            'Group': f'{class2}_vs_{class1}'
+        })
+    
+    # Convert results to DataFrame
+    results_df = pd.DataFrame(results)
+    
+    return results_df.sort_values(by='log2FC', ascending=False)
+
+
+def volcano_plot(
+    df, log2fc_col, padj_col, feature_col, group_col, significance_threshold=0.05, fc_threshold=1.0, save_path=None
+):
+    """
+    Create a volcano plot to visualize log2FC vs -log10(adjusted p-value) with shapes based on groups and labels for significant features.
+    
+    Parameters:
+        df (pd.DataFrame): DataFrame containing the data.
+        log2fc_col (str): Column name for log2 fold change.
+        padj_col (str): Column name for adjusted p-values.
+        feature_col (str): Column name for feature labels.
+        group_col (str): Column name for group labels (used for shapes).
+        significance_threshold (float): Threshold for adjusted p-value to consider significance.
+        fc_threshold (float): Threshold for log2FC to highlight features with high fold change.
+        save_path (str, optional): File path to save the plot. If None, the plot is only displayed.
+        
+    Returns:
+        None: Displays and/or saves the volcano plot.
+    """
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import numpy as np
+
+    # Calculate -log10(padj)
+    df['-log10(padj)'] = -np.log10(df[padj_col])
+
+    # Define colors and conditions
+    conditions = [
+        (df[padj_col] < significance_threshold) & (df[log2fc_col] > fc_threshold),
+        (df[padj_col] < significance_threshold) & (df[log2fc_col] < -fc_threshold),
+    ]
+    labels = ['Upregulated', 'Downregulated']
+    df['Significance'] = np.select(conditions, labels, default='Not Significant')
+
+    # Create the plot
+    plt.figure()
+    sns.scatterplot(
+        data=df,
+        x=log2fc_col,
+        y='-log10(padj)',
+        hue='Significance',
+        style=group_col,
+        palette={'Upregulated': 'red', 'Downregulated': 'blue', 'Not Significant': 'grey'},
+        alpha=0.7
+    )
+
+    # Add threshold lines
+    plt.axhline(-np.log10(significance_threshold), color='black', linestyle='--', linewidth=1)
+    plt.axvline(fc_threshold, color='black', linestyle='--', linewidth=1)
+    plt.axvline(-fc_threshold, color='black', linestyle='--', linewidth=1)
+
+    # Label significant features
+    for _, row in df.iterrows():
+        if row[padj_col] < significance_threshold and abs(row[log2fc_col]) > fc_threshold:
+            plt.text(
+                row[log2fc_col], row['-log10(padj)'], row[feature_col],
+                fontsize=8, color='black', alpha=0.8
+            )
+
+    # Add labels and title
+    plt.xlabel('log2 Fold Change')
+    plt.ylabel('-log10 Adjusted P-value')
+    plt.title('Volcano Plot')
+    plt.grid(visible=True, linestyle='--', alpha=0.5)
+    plt.tight_layout()
+
+    # Save or display the plot
+    if save_path:
+        plt.savefig(save_path)
+
+    plt.show()
