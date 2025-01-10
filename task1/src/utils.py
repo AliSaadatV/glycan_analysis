@@ -179,3 +179,28 @@ def correct_blank(
     data_matrix.loc[samples_meta['class'].isin(sample_classes)] = corrected
 
     return data_matrix
+
+
+def get_low_cv_features(data_mat, sample_meta, ft_columns, threshold=0.3):
+    cv_df = calculate_cv_per_class(data_mat, sample_meta)
+
+    # Reshape the DataFrame to long format
+    cv_df_long = cv_df.melt(id_vars='class', value_vars=ft_columns, 
+                    var_name='Feature', value_name='Value')
+
+    cv_df_long = cv_df_long[(cv_df_long['class'].isin(['QC'])) & (cv_df_long['Value']<=threshold)]
+
+    low_cv_features = list(set(cv_df_long['Feature'].values.tolist()))
+
+    return low_cv_features
+
+
+def get_high_detection_rate_features(data_mat, sample_meta, ft_columns, bio_samples, threshold=0.7):
+    detection_rate = calculate_detection_rate(data_mat, sample_meta)
+    detection_rate_filtered = detection_rate.loc[detection_rate['class'].isin(bio_samples), ft_columns]  >= threshold
+    high_detection_rate_features = detection_rate_filtered.all().index.tolist()
+    return high_detection_rate_features
+
+
+def get_high_mz_features(feat_meta, mz_threshold=500):
+    return feat_meta[feat_meta['mz'] > mz_threshold]['feature'].values.tolist()
