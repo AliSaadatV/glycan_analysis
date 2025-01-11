@@ -1,0 +1,27 @@
+paths:
+  df_glycan_path: "../data/df_glycan.pkl"
+  df_species_path: '../data/df_species.pkl'
+  glycan_binding_path: '../data/glycan_binding.pkl'
+  glycan_list_path: '../data/glycan_list.csv'
+  N_glycans_df_path: '../data/N_glycans_df.pkl'
+  figures_dir: '../results/figures'
+
+plt_params:
+  axes.titlesize: 12
+  axes.labelsize: 12
+  xtick.labelsize: 12
+  ytick.labelsize: 12
+  legend.fontsize: 8
+  legend.title_fontsize: 8
+  figure.figsize: [8, 6]
+  figure.dpi: 100
+  axes.edgecolor: black
+  axes.linewidth: 1.0
+  grid.color: grey
+  grid.linestyle: '--'
+  grid.linewidth: 0.5
+
+sns_params:
+  style: 'whitegrid'
+  palette: 'muted'
+  font_scale: 1.2

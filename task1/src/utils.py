@@ -322,7 +322,7 @@ def volcano_plot(
 
     # Add labels and title
     plt.xlabel('log2 Fold Change')
-    plt.ylabel('-log10 Adjusted P-value')
+    plt.ylabel('-log10(P adjusted)')
     plt.title('Volcano Plot')
     plt.grid(visible=True, linestyle='--', alpha=0.5)
     plt.tight_layout()
