@@ -5,6 +5,7 @@ paths:
   glycan_list_path: '../data/glycan_list.csv'
   N_glycans_df_path: '../data/N_glycans_df.pkl'
   figures_dir: '../results/figures'
+  tokenizer: ../results/misc/tokenizer/
 
 plt_params:
   axes.titlesize: 12
@@ -25,3 +26,7 @@ sns_params:
   style: 'whitegrid'
   palette: 'muted'
   font_scale: 1.2
+
+tokenizer:
+  vocab_size: 1024
+  min_frequency: 2

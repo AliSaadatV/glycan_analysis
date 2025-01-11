@@ -10,4 +10,5 @@ __pycache__/
 *.pyj
 *.pyb
 *.pyd
+task2/results/misc/train_tokenizer_input/
 
