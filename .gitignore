@@ -11,4 +11,5 @@ __pycache__/
 *.pyb
 *.pyd
 task2/results/misc/train_tokenizer_input/
+task2/results/misc/model/checkpoint-48070/*
 
