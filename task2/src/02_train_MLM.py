@@ -1,10 +1,10 @@
 from datasets import load_dataset
 from transformers import (BertTokenizer, DataCollatorForLanguageModeling,
-                          RobertaConfig, RobertaForMaskedLM,
+                          AutoModelForMaskedLM, BertConfig,
                           Trainer, TrainingArguments)
 from utils import load_config, seed_everything
 import pandas as pd
-
+import os
 
 def prepare_datasets(tokenizer):
 
@@ -20,7 +20,7 @@ def prepare_datasets(tokenizer):
     tokenized_dataset = dataset.map(tokenize_function, batched=True, remove_columns=['glycan'])
 
     # Train-validation split
-    train_test_split = tokenized_dataset['train'].train_test_split(test_size=config['dataset']['val_size'])  # 80% train, 20% validation
+    train_test_split = tokenized_dataset['train'].train_test_split(test_size=config['dataset']['val_size']) 
     train_dataset = train_test_split['train']
     val_dataset = train_test_split['test']
 
@@ -28,33 +28,30 @@ def prepare_datasets(tokenizer):
 
 
 def train_model(data_collator, train_dataset, val_dataset, tokenizer):
-    # Set a configuration for our RoBERTa model
-    model_config = RobertaConfig(
-        vocab_size=tokenizer.vocab_size,
-        max_position_embeddings=config['model']['max_position_embeddings'],
-        num_attention_heads=config['model']['num_attention_heads'],
-        num_hidden_layers=config['model']['num_hidden_layers'],
-        hidden_size=config['model']['hidden_size'],
-        type_vocab_size=config['model']['type_vocab_size']
-    )
-
-    # Initialize the model from a configuration without pretrained weights
-    model = RobertaForMaskedLM(config=model_config)
+    
+    # Initialize model
+    model_config = BertConfig()
+    model_config.vocab_size = tokenizer.vocab_size 
+    model = AutoModelForMaskedLM.from_config(model_config)
     print(f'Initialized a model with {model.num_parameters()} parameters')
 
     # Define the training arguments
     training_args = TrainingArguments(
         output_dir=config['paths']['model'],
         overwrite_output_dir=True,
-        evaluation_strategy = 'epoch',
+        eval_strategy = 'epoch',
         num_train_epochs=config['training']['n_epochs'],
         learning_rate=config['training']['lr'],
         weight_decay=config['training']['wd'],
         per_device_train_batch_size=config['training']['batch_size'],
         per_device_eval_batch_size=config['training']['batch_size'],
-        save_strategy='best',
-        metric_for_best_model='eval_loss',
-        logging_dir=f"{config['paths']['model']}/logs"
+        save_strategy='epoch',
+        save_total_limit=1,
+        load_best_model_at_end=True,
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
+        logging_dir=f"{config['paths']['model']}/logs",
+        report_to='none'
     )
 
     # Create the trainer for our model
@@ -66,13 +63,34 @@ def train_model(data_collator, train_dataset, val_dataset, tokenizer):
         eval_dataset=val_dataset,
     )
 
-    print('START TRAINING')
     # Train the model
+    print('START TRAINING')
     trainer.train()
     print(f"FINISH TRAINING. MODEL SAVED AT {config['paths']['model']}")
+    
+    return trainer
+
+
+def save_logs(trainer):
+
+    # Access the logged metrics
+    log_history = trainer.state.log_history
+
+    # Save train and validation loss to a file
+    with open(f"{config['paths']['model']}/logs/loss_log.txt", "w") as f:
+        for log in log_history:
+            if "loss" in log or "eval_loss" in log:
+                epoch = log.get("epoch", "N/A")
+                train_loss = log.get("loss", "N/A")
+                eval_loss = log.get("eval_loss", "N/A")
+                f.write(f"Epoch: {epoch}, Train Loss: {train_loss}, Validation Loss: {eval_loss}\n")
 
 
 if __name__ == '__main__':
+
+    # for CUDA compatibility
+    os.environ["TORCH_USE_CUDA_DSA"] = "1"
+
     # for reproducibility
     seed_everything(42)
 
@@ -91,4 +109,7 @@ if __name__ == '__main__':
     )
 
     # train and save the model
-    train_model(data_collator, train_dataset, val_dataset, tokenizer)
+    trainer = train_model(data_collator, train_dataset, val_dataset, tokenizer)
+
+    # save train/val loss per epoch in a file
+    save_logs(trainer)
