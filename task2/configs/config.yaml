@@ -5,7 +5,9 @@ paths:
   glycan_list_path: '../data/glycan_list.csv'
   N_glycans_df_path: '../data/N_glycans_df.pkl'
   figures_dir: '../results/figures'
-  tokenizer: ../results/misc/tokenizer/
+  tokenizer: "../results/misc/tokenizer/"
+  glycan_seqs: "../data/all_glycan_seqs.csv"
+  model: '../results/misc/model/'
 
 plt_params:
   axes.titlesize: 12
@@ -30,3 +32,22 @@ sns_params:
 tokenizer:
   vocab_size: 1024
   min_frequency: 2
+
+dataset:
+  max_length: 180
+  val_size: 0.2
+
+model:
+  mlm_probability: 0.15
+  max_position_embeddings: 64
+  num_attention_heads: 4
+  num_hidden_layers: 2
+  hidden_size: 64
+  type_vocab_size: 1
+
+training:
+  n_epochs: 5
+  lr: 0.00005
+  wd: 0.01
+  batch_size: 16
+
