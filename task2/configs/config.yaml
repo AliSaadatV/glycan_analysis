@@ -8,6 +8,7 @@ paths:
   tokenizer: "../results/misc/tokenizer/"
   glycan_seqs: "../data/all_glycan_seqs.csv"
   model: '../results/misc/model/'
+  embeds: '../results/misc/embeddings/all_glycan_embeds.pkl'
 
 plt_params:
   axes.titlesize: 12

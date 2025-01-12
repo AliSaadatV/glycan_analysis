@@ -12,4 +12,4 @@ __pycache__/
 *.pyd
 task2/results/misc/train_tokenizer_input/
 task2/results/misc/model/checkpoint-48070/*
-
+task2/results/misc/embeddings/*
