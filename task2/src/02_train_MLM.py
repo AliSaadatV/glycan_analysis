@@ -29,7 +29,7 @@ def prepare_datasets(tokenizer):
 
 def train_model(data_collator, train_dataset, val_dataset, tokenizer):
     # Set a configuration for our RoBERTa model
-    config = RobertaConfig(
+    model_config = RobertaConfig(
         vocab_size=tokenizer.vocab_size,
         max_position_embeddings=config['model']['max_position_embeddings'],
         num_attention_heads=config['model']['num_attention_heads'],
@@ -39,7 +39,7 @@ def train_model(data_collator, train_dataset, val_dataset, tokenizer):
     )
 
     # Initialize the model from a configuration without pretrained weights
-    model = RobertaForMaskedLM(config=config)
+    model = RobertaForMaskedLM(config=model_config)
     print(f'Initialized a model with {model.num_parameters()} parameters')
 
     # Define the training arguments
@@ -47,12 +47,13 @@ def train_model(data_collator, train_dataset, val_dataset, tokenizer):
         output_dir=config['paths']['model'],
         overwrite_output_dir=True,
         evaluation_strategy = 'epoch',
-        num_train_epochs=config['training']['batcn_epochs'],
+        num_train_epochs=config['training']['n_epochs'],
         learning_rate=config['training']['lr'],
         weight_decay=config['training']['wd'],
         per_device_train_batch_size=config['training']['batch_size'],
         per_device_eval_batch_size=config['training']['batch_size'],
         save_strategy='best',
+        metric_for_best_model='eval_loss',
         logging_dir=f"{config['paths']['model']}/logs"
     )
 
@@ -79,7 +80,7 @@ if __name__ == '__main__':
     config = load_config("../configs/config.yaml")
 
     # load tokenizer
-    tokenizer = BertTokenizer.from_pretrained('../results/misc/tokenizer/')
+    tokenizer = BertTokenizer.from_pretrained(config['paths']['tokenizer'])
 
     # get datasets
     train_dataset, val_dataset = prepare_datasets(tokenizer)
