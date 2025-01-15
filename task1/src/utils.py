@@ -195,10 +195,11 @@ def get_low_cv_features(data_mat, sample_meta, ft_columns, threshold=0.3):
     return low_cv_features
 
 
-def get_high_detection_rate_features(data_mat, sample_meta, ft_columns, bio_samples, threshold=0.7):
-    detection_rate = calculate_detection_rate(data_mat, sample_meta)
-    detection_rate_filtered = detection_rate.loc[detection_rate['class'].isin(bio_samples), ft_columns]  >= threshold
-    high_detection_rate_features = detection_rate_filtered.all().index.tolist()
+def get_high_detection_rate_features(data_mat, sample_meta, ft_columns, bio_samples, prevelance_threshold=0.7, detection_threshold=0):
+    detection_rate = calculate_detection_rate(data_mat, sample_meta, threshold=detection_threshold)
+    detection_rate_filtered = detection_rate.loc[detection_rate['class'].isin(bio_samples), ft_columns]  >= prevelance_threshold
+    high_detection_rate_features = detection_rate_filtered.all()
+    high_detection_rate_features = high_detection_rate_features.loc[high_detection_rate_features].index.tolist()
     return high_detection_rate_features
 
 
@@ -332,3 +333,102 @@ def volcano_plot(
         plt.savefig(save_path)
 
     plt.show()
+
+
+def get_feature_importance(data_mat, selected_features, group1, group2, save=True):
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
+    from sklearn.metrics import balanced_accuracy_score, classification_report
+    from sklearn.inspection import permutation_importance
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    X = data_mat.loc[data_mat['class'].isin([group1, group2]), selected_features]
+    y = data_mat.loc[data_mat['class'].isin([group1, group2]), 'class']
+
+    # Split data
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, stratify=y, train_size=0.8, random_state=42, shuffle=True
+    )
+
+    # Hyperparameter tuning
+    param_grid = {
+        "n_estimators": [3, 4, 5],
+        "max_depth": [None, 1, 2, 3, 4, 5],
+        "min_samples_leaf": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "max_features": ["sqrt", "log2", None],
+        "bootstrap": [True, False],
+        "criterion": ["gini", "entropy"]
+    }
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    grid_search = GridSearchCV(
+        RandomForestClassifier(random_state=42), 
+        param_grid, 
+        cv=cv, 
+        n_jobs=-1, 
+        scoring='balanced_accuracy'
+    )
+    grid_search.fit(X_train, y_train)
+    best_params = grid_search.best_params_
+    print(f'best_params: {best_params}')
+    print("*"*20)
+
+    # Train the best model
+    best_model = RandomForestClassifier(**best_params, random_state=42)
+    best_model.fit(X_train, y_train)
+
+    # Evaluate the model
+    y_pred = best_model.predict(X_test)
+    balanced_acc = balanced_accuracy_score(y_test, y_pred)
+    print(f"Balanced Accuracy: {balanced_acc:.3f}")
+    print("*"*20)
+    print('Classification report :\n', classification_report(y_test, y_pred,\
+                                                            target_names=[group1, group2]))
+
+    importance_result = best_model.feature_importances_
+    importance_df = pd.DataFrame({
+        "feature": selected_features,
+        "importance_mean": importance_result
+    }).sort_values(by="importance_mean", ascending=False)
+    
+
+    plt.figure()
+    sns.barplot(importance_df, x='feature', y='importance_mean')
+    plt.xticks(rotation=90)
+    plt.xlabel(None)
+    plt.title(f'feature importance for comparison {group1} vs {group2}')
+    if save:
+        plt.savefig(f"../results/figures/feature_importance_{group1}_vs_{group2}.png")
+    plt.show()
+
+    return importance_df
+
+
+
+
+def make_boxplot_for_features(data_mat, importance_df, group1, group2, log_scale=True, save=True):
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    selected_features = importance_df[importance_df['importance_mean']>0]['feature'].unique().tolist()
+    data_mat2 = data_mat.loc[data_mat['class'].isin([group1, group2]), selected_features + ['class']]
+
+    plt.figure()
+    sns.boxplot(data_mat2.melt(id_vars='class', var_name='feature', value_name='intensity'),\
+                hue='class', x='feature', y='intensity')
+    if log_scale:
+        plt.yscale('log')
+        plt.ylabel('log (scaled intensity)')
+    else:
+        plt.ylabel('scaled intensity')
+    
+    if save:
+        plt.savefig(f"../results/figures/boxplot_important_features_{group1}_vs_{group2}.png")
+    
+    plt.show()
+    
+
+
+    
+
