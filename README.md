@@ -9,6 +9,46 @@
 &nbsp; 
 &nbsp; 
 &nbsp; 
+
+# Solutions
+
+The structure of this repository is as below:
+
+```
+.
+├── README.md
+├── public
+│   ├── 221006-logo-isospec-color.jpg
+│   └── sample-list.png
+├── pyproject.toml
+├── reflection.md
+├── requirements.txt
+├── structure.txt
+├── task1
+│   ├── configs
+│   ├── data
+│   ├── notebooks
+│   ├── results
+│   └── src
+├── task2
+│   ├── configs
+│   ├── data
+│   ├── notebooks
+│   ├── results
+│   └── src
+└── uv.lock
+```
+
+## Taks1
+
+All the solutions can be found in the notebooks directory. There is no need to install additional dependencies. 
+
+## Task2
+
+
+
+***
+
 # Machine Learning Internship Assignment  
 
 &nbsp; 
@@ -207,11 +247,3 @@ The provided packages are not exhaustive, you are free to use any other package 
 - [Glaycan Analysis](https://www.mdpi.com/2218-273X/13/4/605)
 - [Glycowork](https://github.com/BojarLab/glycowork)
 - [UV package manager](https://docs.astral.sh/uv/guides/projects/)
-
-***
-
-# Solutions
-
-## Task1
-
-## Task2
