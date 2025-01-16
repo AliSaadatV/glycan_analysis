@@ -45,7 +45,20 @@ All the solutions can be found in the notebooks directory. There is no need to i
 
 ## Task2
 
+For this task these additional dependencies should be installed:
 
+```
+pip install tokenizers transformers accelerate datasets huggingface_hub biopython
+```
+
+After installing, go to the src directory and run:
+
+```
+python 01_train_tokenizer.py
+python 02_train_MLM.py
+```
+
+Then you can go to notebooks directory and run them in order.
 
 ***
 
